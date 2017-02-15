@@ -18,8 +18,21 @@ const (
 )
 
 var (
-	mosquittoClient MQTTClient
-	metrics         map[string]prometheus.Gauge
+	mosquittoClient  MQTTClient
+	ignoreKeyMetrics = map[string]string{
+		"$SYS/broker/timestamp": "The timestamp at which this particular build of the broker was made. Static.",
+		"$SYS/broker/version":   "The version of the broker. Static.",
+	}
+	counterKeyMetrics = map[string]string{
+		"$SYS/broker/bytes/received":            "The total number of bytes received since the broker started.",
+		"$SYS/broker/bytes/sent":                "The total number of bytes sent since the broker started.",
+		"$SYS/broker/messages/received":         "The total number of messages of any type received since the broker started.",
+		"$SYS/broker/messages/sent":             "The total number of messages of any type sent since the broker started.",
+		"$SYS/broker/publish/messages/received": "The total number of PUBLISH messages received since the broker started.",
+		"$SYS/broker/publish/messages/sent":     "The total number of PUBLISH messages sent since the broker started.",
+	}
+	counterMetrics = map[string]prometheus.Counter{}
+	gougeMetrics   = map[string]prometheus.Gauge{}
 )
 
 func main() {
@@ -82,8 +95,6 @@ func runServer(c *cli.Context) {
 	err = mosquittoClient.Connect()
 	fatalfOnError(err, "Error connection to mosquitto broker.", err)
 
-	metrics = map[string]prometheus.Gauge{}
-
 	// save the environment
 	go func() {
 		brokerInfoChan, cancelBrokerInfoSubscription := mosquittoClient.Subscribe("$SYS/#")
@@ -106,28 +117,57 @@ func runServer(c *cli.Context) {
 
 // $SYS/broker/bytes/received
 func processUpdate(topic, payload string) {
-	if metrics[topic] != nil {
-		// update the first value
-		value := parseValue(payload)
-		metrics[topic].Set(value)
-	} else {
-		// ignore static metrics
-		if topic != "$SYS/broker/timestamp" && topic != "$SYS/broker/version" {
-			name := strings.Replace(topic, "$SYS/", "", 1)
-			name = strings.Replace(name, "/", "_", -1)
-			name = strings.Replace(name, " ", "_", -1)
-			metrics[topic] = prometheus.NewGauge(prometheus.GaugeOpts{
-				Name: name,
-				Help: topic,
-			})
-			// register the metric
-			prometheus.MustRegister(metrics[topic])
-			// add the first value
-			value := parseValue(payload)
-			metrics[topic].Set(value)
+	log.Debugf("Got broker update with topic %s and data %s", topic, payload)
+	if _, ok := ignoreKeyMetrics[topic]; !ok {
+		if _, ok := counterKeyMetrics[topic]; ok {
+			log.Debugf("Processing counter metric %s with data %s", topic, payload)
+			processCounterMetric(topic, payload)
+		} else {
+			log.Debugf("Processing gauge metric %s with data %s", topic, payload)
+			processGaugeMetric(topic, payload)
 		}
 	}
-	log.Debugf("Got broker update with topic %s and data %s", topic, payload)
+}
+
+func processCounterMetric(topic, payload string) {
+	if counterMetrics[topic] != nil {
+		value := parseValue(payload)
+		counterMetrics[topic].Add(value)
+	} else {
+		counterMetrics[topic] = prometheus.NewCounter(prometheus.CounterOpts{
+			Name: parseTopic(topic),
+			Help: topic,
+		})
+		// register the metric
+		prometheus.MustRegister(counterMetrics[topic])
+		// add the first value
+		value := parseValue(payload)
+		counterMetrics[topic].Add(value)
+	}
+}
+
+func processGaugeMetric(topic, payload string) {
+	if gougeMetrics[topic] != nil {
+		value := parseValue(payload)
+		gougeMetrics[topic].Set(value)
+	} else {
+		gougeMetrics[topic] = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: parseTopic(topic),
+			Help: topic,
+		})
+		// register the metric
+		prometheus.MustRegister(gougeMetrics[topic])
+		// add the first value
+		value := parseValue(payload)
+		gougeMetrics[topic].Set(value)
+	}
+}
+
+func parseTopic(topic string) string {
+	name := strings.Replace(topic, "$SYS/", "", 1)
+	name = strings.Replace(name, "/", "_", -1)
+	name = strings.Replace(name, " ", "_", -1)
+	return name
 }
 
 func parseValue(payload string) float64 {

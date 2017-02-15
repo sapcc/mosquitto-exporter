@@ -1,5 +1,5 @@
 
-PKG_NAME:=github.wdf.sap.corp/monsoon/mosquitto-exporter
+PKG_NAME:=github.com/sapcc/mosquitto-exporter
 BUILD_DIR:=bin
 MOSQUITTO_EXPORTER_BINARY:=$(BUILD_DIR)/exporter
 
