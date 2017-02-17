@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	Version   = "20170214.01"
+	Version   = "develop"
 	GITCOMMIT = "HEAD"
 )
 

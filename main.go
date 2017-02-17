@@ -1,14 +1,16 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/codegangsta/cli"
+	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -18,7 +20,6 @@ const (
 )
 
 var (
-	mosquittoClient  MQTTClient
 	ignoreKeyMetrics = map[string]string{
 		"$SYS/broker/timestamp": "The timestamp at which this particular build of the broker was made. Static.",
 		"$SYS/broker/version":   "The version of the broker. Static.",
@@ -50,80 +51,77 @@ func main() {
 	app.Action = runServer
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
-			Name:   "log-level,l",
-			Usage:  "Log level",
-			EnvVar: envPrefix + "LOG_LEVEL",
-			Value:  "info",
-		},
-		cli.StringSliceFlag{
 			Name:   "endpoint,e",
-			Usage:  "Endpoint url(s) for the mosquitto broker",
+			Usage:  "Endpoint for the mosquitto broker",
 			EnvVar: envPrefix + "ENDPOINT",
-			Value:  new(cli.StringSlice),
+			Value:  "tcp://127.0.0.1:1883",
 		},
 		cli.StringFlag{
 			Name:   "bind-address,b",
 			Usage:  "Listen address for api server",
-			Value:  "0.0.0.0:3000",
+			Value:  "0.0.0.0:9324",
 			EnvVar: envPrefix + "LISTEN",
 		},
-	}
-
-	app.Before = func(c *cli.Context) error {
-		// set log level
-		lvl, err := log.ParseLevel(c.GlobalString("log-level"))
-		if err != nil {
-			log.Fatalf("Invalid log level: %s\n", c.GlobalString("log-level"))
-			return err
-		}
-		log.SetLevel(lvl)
-		return nil
 	}
 
 	app.Run(os.Args)
 }
 
 func runServer(c *cli.Context) {
-	// global transport instance
-	mosquittoClient, err := mqttClient(c)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer mosquittoClient.Disconnect()
+	log.Printf("Starting mosquitto_broker %s", versionString())
 
-	// conect
-	err = mosquittoClient.Connect()
-	fatalfOnError(err, "Error connection to mosquitto broker.", err)
-
-	// save the environment
-	go func() {
-		brokerInfoChan, cancelBrokerInfoSubscription := mosquittoClient.Subscribe("$SYS/#")
-		defer cancelBrokerInfoSubscription()
-
-		for {
-			select {
-			case update := <-brokerInfoChan:
-				processUpdate(string(update.Topic()), string(update.Payload()))
-			}
+	opts := mqtt.NewClientOptions()
+	opts.SetCleanSession(true)
+	opts.AddBroker(c.String("endpoint"))
+	opts.OnConnect = func(client mqtt.Client) {
+		log.Printf("Connected to %s", c.String("endpoint"))
+		// subscribe on every (re)connect
+		token := client.Subscribe("$SYS/#", 0, func(_ mqtt.Client, msg mqtt.Message) {
+			processUpdate(msg.Topic(), string(msg.Payload()))
+		})
+		if !token.WaitTimeout(10 * time.Second) {
+			log.Println("Erorr: Timeout subscribing to topic $SYS/#")
 		}
-	}()
+		if err := token.Error(); err != nil {
+			log.Printf("Failed to subscribe to topic $SYS/#: %s", err)
+		}
+	}
+	opts.OnConnectionLost = func(client mqtt.Client, err error) {
+		log.Printf("Error: Connection to %s lost: %s", c.String("endpoint"), err)
+	}
+	client := mqtt.NewClient(opts)
+
+	// try to connect forever
+	for {
+		token := client.Connect()
+		if token.WaitTimeout(5 * time.Second) {
+			if token.Error() == nil {
+				break
+			}
+			log.Printf("Error: Failed to connect to broker: %s", token.Error())
+		} else {
+			log.Printf("Timeout connecting to endpoint %s", c.String("endpoint"))
+		}
+		time.Sleep(5 * time.Second)
+	}
 
 	// init the router and server
-	router := newRouter()
-	log.Infof("Listening on %q...", c.GlobalString("bind-address"))
-	err = http.ListenAndServe(c.GlobalString("bind-address"), router)
+	http.Handle("/metrics", prometheus.Handler())
+	http.HandleFunc("/", serveVersion)
+	log.Printf("Listening on %s...", c.GlobalString("bind-address"))
+	err := http.ListenAndServe(c.GlobalString("bind-address"), nil)
 	fatalfOnError(err, "Failed to bind on %s: ", c.GlobalString("bind-address"))
 }
 
 // $SYS/broker/bytes/received
 func processUpdate(topic, payload string) {
-	log.Debugf("Got broker update with topic %s and data %s", topic, payload)
+	//log.Printf("Got broker update with topic %s and data %s", topic, payload)
 	if _, ok := ignoreKeyMetrics[topic]; !ok {
 		if _, ok := counterKeyMetrics[topic]; ok {
-			log.Debugf("Processing counter metric %s with data %s", topic, payload)
+			//log.Printf("Processing counter metric %s with data %s", topic, payload)
 			processCounterMetric(topic, payload)
 		} else {
-			log.Debugf("Processing gauge metric %s with data %s", topic, payload)
+			//log.Printf("Processing gauge metric %s with data %s", topic, payload)
 			processGaugeMetric(topic, payload)
 		}
 	}
