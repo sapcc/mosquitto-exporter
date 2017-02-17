@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	appName   = "Mosquitto exporter"
-	envPrefix = "MOSQUITTO_EXPORTER_"
+	appName = "Mosquitto exporter"
 )
 
 var (
@@ -46,21 +45,25 @@ func main() {
 			Name:  "Arturo Reuschenbach Puncernau",
 			Email: "a.reuschenbach.puncernau@sap.com",
 		},
+		{
+			Name:  "Fabian Ruff",
+			Email: "fabian.ruff@sap.com",
+		},
 	}
-	app.Usage = "Mosquitto exporter"
+	app.Usage = "Prometheus exporter for broker metrics"
 	app.Action = runServer
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:   "endpoint,e",
-			Usage:  "Endpoint for the mosquitto broker",
-			EnvVar: envPrefix + "ENDPOINT",
+			Usage:  "Endpoint for the Mosquitto message broker",
+			EnvVar: "BROKER_ENDPOINT",
 			Value:  "tcp://127.0.0.1:1883",
 		},
 		cli.StringFlag{
 			Name:   "bind-address,b",
-			Usage:  "Listen address for api server",
+			Usage:  "Listen address for metrics HTTP endpoint",
 			Value:  "0.0.0.0:9324",
-			EnvVar: envPrefix + "LISTEN",
+			EnvVar: "BIND_ADDRESS",
 		},
 	}
 
