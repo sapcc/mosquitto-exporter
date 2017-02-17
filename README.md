@@ -6,7 +6,7 @@ There is a docker image available:
 ```
 docker run \
   -e BROKER_ENDPOINT=tcp://mosquitto:1883 \
-  -p 9324:9324 sapcc/mosquitto-exporter
+  -p 9234:9234 sapcc/mosquitto-exporter
 ```
 
 Usage:
@@ -30,7 +30,7 @@ COMMANDS:
 
 GLOBAL OPTIONS:
    --endpoint, -e "tcp://127.0.0.1:1883"	Endpoint for the Mosquitto message broker [$BROKER_ENDPOINT]
-   --bind-address, -b "0.0.0.0:9324"		Listen address for metrics HTTP endpoint [$BIND_ADDRESS]
+   --bind-address, -b "0.0.0.0:9234"		Listen address for metrics HTTP endpoint [$BIND_ADDRESS]
    --help, -h					show help
    --version, -v				print the version
 
