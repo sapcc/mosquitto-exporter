@@ -20,10 +20,10 @@ const (
 
 var (
 	ignoreKeyMetrics = map[string]string{
-		"$SYS/broker/timestamp": "The timestamp at which this particular build of the broker was made. Static.",
-		"$SYS/broker/version":   "The version of the broker. Static.",
-		"$SYS/broker/clients/active": "deprecated in favour of $SYS/broker/clients/connected",
-		"$SYS/broker/clients/inactive": "deprecated in favour of $SYS/broker/clients/disconnected",		
+		"$SYS/broker/timestamp":        "The timestamp at which this particular build of the broker was made. Static.",
+		"$SYS/broker/version":          "The version of the broker. Static.",
+		"$SYS/broker/clients/active":   "deprecated in favour of $SYS/broker/clients/connected",
+		"$SYS/broker/clients/inactive": "deprecated in favour of $SYS/broker/clients/disconnected",
 	}
 	counterKeyMetrics = map[string]string{
 		"$SYS/broker/bytes/received":            "The total number of bytes received since the broker started.",
@@ -32,6 +32,7 @@ var (
 		"$SYS/broker/messages/sent":             "The total number of messages of any type sent since the broker started.",
 		"$SYS/broker/publish/messages/received": "The total number of PUBLISH messages received since the broker started.",
 		"$SYS/broker/publish/messages/sent":     "The total number of PUBLISH messages sent since the broker started.",
+		"$SYS/broker/publish/messages/dropped":  "The total number of publish messages that have been dropped due to inflight/queuing limits.",
 	}
 	counterMetrics = map[string]prometheus.Counter{}
 	gougeMetrics   = map[string]prometheus.Gauge{}
