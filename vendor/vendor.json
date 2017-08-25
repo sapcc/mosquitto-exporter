@@ -9,6 +9,12 @@
 			"revisionTime": "2016-08-04T10:47:26Z"
 		},
 		{
+			"checksumSHA1": "FErdaG0vJrWecQqeMJKWS+alUKA=",
+			"path": "github.com/codegangsta/cli",
+			"revision": "f017f86fccc5a039a98f23311f34fdf78b014f78",
+			"revisionTime": "2017-08-13T14:59:49Z"
+		},
+		{
 			"checksumSHA1": "br8f8s0vtwRq5P2DEtByXg5s4V0=",
 			"path": "github.com/eclipse/paho.mqtt.golang",
 			"revision": "d4f545eb108a2d19f9b1a735689dbfb719bc21fb",
