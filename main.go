@@ -35,7 +35,7 @@ var (
 		"$SYS/broker/publish/messages/dropped":  "The total number of publish messages that have been dropped due to inflight/queuing limits.",
 	}
 	counterMetrics = map[string]prometheus.Counter{}
-	gougeMetrics   = map[string]prometheus.Gauge{}
+	gaugeMetrics   = map[string]prometheus.Gauge{}
 )
 
 func main() {
@@ -125,7 +125,7 @@ func processUpdate(topic, payload string) {
 	if _, ok := ignoreKeyMetrics[topic]; !ok {
 		if _, ok := counterKeyMetrics[topic]; ok {
 			//log.Printf("Processing counter metric %s with data %s", topic, payload)
-			processCounterMetric(topic, payload)
+			processGaugeMetric(topic, payload)
 		} else {
 			//log.Printf("Processing gauge metric %s with data %s", topic, payload)
 			processGaugeMetric(topic, payload)
@@ -146,19 +146,19 @@ func processCounterMetric(topic, payload string) {
 }
 
 func processGaugeMetric(topic, payload string) {
-	if gougeMetrics[topic] != nil {
+	if gaugeMetrics[topic] != nil {
 		value := parseValue(payload)
-		gougeMetrics[topic].Set(value)
+		gaugeMetrics[topic].Set(value)
 	} else {
-		gougeMetrics[topic] = prometheus.NewGauge(prometheus.GaugeOpts{
+		gaugeMetrics[topic] = prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: parseTopic(topic),
 			Help: topic,
 		})
 		// register the metric
-		prometheus.MustRegister(gougeMetrics[topic])
+		prometheus.MustRegister(gaugeMetrics[topic])
 		// add the first value
 		value := parseValue(payload)
-		gougeMetrics[topic].Set(value)
+		gaugeMetrics[topic].Set(value)
 	}
 }
 
