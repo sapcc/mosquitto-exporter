@@ -134,20 +134,15 @@ func processUpdate(topic, payload string) {
 }
 
 func processCounterMetric(topic, payload string) {
-	if counterMetrics[topic] != nil {
-		value := parseValue(payload)
-		counterMetrics[topic].Add(value)
-	} else {
-		counterMetrics[topic] = prometheus.NewCounter(prometheus.CounterOpts{
-			Name: parseTopic(topic),
-			Help: topic,
-		})
-		// register the metric
-		prometheus.MustRegister(counterMetrics[topic])
-		// add the first value
-		value := parseValue(payload)
-		counterMetrics[topic].Add(value)
-	}
+	counterMetrics[topic] = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: parseTopic(topic),
+		Help: topic,
+	})
+	// register the metric
+	prometheus.MustRegister(counterMetrics[topic])
+	// add the first value
+	value := parseValue(payload)
+	counterMetrics[topic].Add(value)
 }
 
 func processGaugeMetric(topic, payload string) {
