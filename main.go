@@ -241,7 +241,8 @@ func parseTopic(topic string) string {
 }
 
 func parseValue(payload string) float64 {
-	var validValue = regexp.MustCompile(`\d{1,}[.]\d{1,}|\d{1,}`)
+	// fmt.Printf("Payload %s \n", payload)
+	var validValue = regexp.MustCompile(`-?\d{1,}[.]\d{1,}|\d{1,}`)
 	// get the first value of the string
 	strArray := validValue.FindAllString(payload, 1)
 	if len(strArray) > 0 {
