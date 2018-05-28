@@ -35,7 +35,7 @@ var (
 		"$SYS/broker/publish/messages/dropped":  "The total number of publish messages that have been dropped due to inflight/queuing limits.",
 	}
 	counterMetrics = map[string]*MosquittoCounter{}
-	gougeMetrics   = map[string]prometheus.Gauge{}
+	gaugeMetrics   = map[string]prometheus.Gauge{}
 )
 
 func main() {
@@ -157,19 +157,19 @@ func processCounterMetric(topic, payload string) {
 }
 
 func processGaugeMetric(topic, payload string) {
-	if gougeMetrics[topic] != nil {
+	if gaugeMetrics[topic] != nil {
 		value := parseValue(payload)
-		gougeMetrics[topic].Set(value)
+		gaugeMetrics[topic].Set(value)
 	} else {
-		gougeMetrics[topic] = prometheus.NewGauge(prometheus.GaugeOpts{
+		gaugeMetrics[topic] = prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: parseTopic(topic),
 			Help: topic,
 		})
 		// register the metric
-		prometheus.MustRegister(gougeMetrics[topic])
+		prometheus.MustRegister(gaugeMetrics[topic])
 		// add the first value
 		value := parseValue(payload)
-		gougeMetrics[topic].Set(value)
+		gaugeMetrics[topic].Set(value)
 	}
 }
 
