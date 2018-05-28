@@ -34,7 +34,7 @@ var (
 		"$SYS/broker/publish/messages/sent":     "The total number of PUBLISH messages sent since the broker started.",
 		"$SYS/broker/publish/messages/dropped":  "The total number of publish messages that have been dropped due to inflight/queuing limits.",
 	}
-	counterMetrics = map[string]prometheus.Counter{}
+	counterMetrics = map[string]*MosquittoCounter{}
 	gougeMetrics   = map[string]prometheus.Gauge{}
 )
 
@@ -124,7 +124,7 @@ func processUpdate(topic, payload string) {
 	//log.Printf("Got broker update with topic %s and data %s", topic, payload)
 	if _, ok := ignoreKeyMetrics[topic]; !ok {
 		if _, ok := counterKeyMetrics[topic]; ok {
-			//log.Printf("Processing counter metric %s with data %s", topic, payload)
+			// log.Printf("Processing counter metric %s with data %s", topic, payload)
 			processCounterMetric(topic, payload)
 		} else {
 			//log.Printf("Processing gauge metric %s with data %s", topic, payload)
@@ -136,17 +136,23 @@ func processUpdate(topic, payload string) {
 func processCounterMetric(topic, payload string) {
 	if counterMetrics[topic] != nil {
 		value := parseValue(payload)
-		counterMetrics[topic].Add(value)
+		counterMetrics[topic].Set(value)
 	} else {
-		counterMetrics[topic] = prometheus.NewCounter(prometheus.CounterOpts{
-			Name: parseTopic(topic),
-			Help: topic,
-		})
+		// create a mosquitto counter pointer
+		mCounter := NewMosquittoCounter(prometheus.NewDesc(
+			parseTopic(topic),
+			topic,
+			[]string{},
+			prometheus.Labels{},
+		))
+
+		// save it
+		counterMetrics[topic] = mCounter
 		// register the metric
-		prometheus.MustRegister(counterMetrics[topic])
+		prometheus.MustRegister(mCounter)
 		// add the first value
 		value := parseValue(payload)
-		counterMetrics[topic].Add(value)
+		counterMetrics[topic].Set(value)
 	}
 }
 
