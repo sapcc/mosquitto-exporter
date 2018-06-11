@@ -35,7 +35,3 @@ GLOBAL OPTIONS:
    --version, -v				print the version
 
 ```
-
-Todo:
-=====
-* Add support for auth and TLS setting for the broker endpoint
