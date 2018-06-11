@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"crypto/tls"
+
 	"github.com/codegangsta/cli"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/prometheus/client_golang/prometheus"
@@ -30,9 +32,14 @@ var (
 		"$SYS/broker/bytes/sent":                "The total number of bytes sent since the broker started.",
 		"$SYS/broker/messages/received":         "The total number of messages of any type received since the broker started.",
 		"$SYS/broker/messages/sent":             "The total number of messages of any type sent since the broker started.",
+		"$SYS/broker/publish/bytes/received":    "The total number of PUBLISH bytes received since the broker started.",
+		"$SYS/broker/publish/bytes/sent":        "The total number of PUBLISH bytes sent since the broker started.",
 		"$SYS/broker/publish/messages/received": "The total number of PUBLISH messages received since the broker started.",
 		"$SYS/broker/publish/messages/sent":     "The total number of PUBLISH messages sent since the broker started.",
-		"$SYS/broker/publish/messages/dropped":  "The total number of publish messages that have been dropped due to inflight/queuing limits.",
+		"$SYS/broker/publish/messages/dropped":  "The total number of PUBLISH messages that have been dropped due to inflight/queuing limits.",
+		"$SYS/broker/uptime":                    "The total number of seconds since the broker started.",
+		"$SYS/broker/clients/maximum":           "The maximum number of clients connected simultaneously since the broker started",
+		"$SYS/broker/clients/total":             "The total number of clients connected since the broker started.",
 	}
 	counterMetrics = map[string]*MosquittoCounter{}
 	gaugeMetrics   = map[string]prometheus.Gauge{}
@@ -68,6 +75,30 @@ func main() {
 			Value:  "0.0.0.0:9234",
 			EnvVar: "BIND_ADDRESS",
 		},
+		cli.StringFlag{
+			Name:   "user,u",
+			Usage:  "Username for the Mosquitto message broker",
+			Value:  "",
+			EnvVar: "MQTT_USER",
+		},
+		cli.StringFlag{
+			Name:   "pass,p",
+			Usage:  "Password for the User on the Mosquitto message broker",
+			Value:  "",
+			EnvVar: "MQTT_PASS",
+		},
+		cli.StringFlag{
+			Name:   "cert,c",
+			Usage:  "Location of a TLS certificate .pem file for the Mosquitto message broker",
+			Value:  "",
+			EnvVar: "MQTT_CERT",
+		},
+		cli.StringFlag{
+			Name:   "key,k",
+			Usage:  "Location of a TLS private key .pem file for the Mosquitto message broker",
+			Value:  "",
+			EnvVar: "MQTT_KEY",
+		},
 	}
 
 	app.Run(os.Args)
@@ -79,6 +110,35 @@ func runServer(c *cli.Context) {
 	opts := mqtt.NewClientOptions()
 	opts.SetCleanSession(true)
 	opts.AddBroker(c.String("endpoint"))
+
+	// if you have a username you'll need a password with it
+	if c.String("user") != "" {
+		opts.SetUsername(c.String("user"))
+		if c.String("pass") != "" {
+			opts.SetPassword(c.String("pass"))
+		}
+	}
+	// if you have a client certificate you want a key aswell
+	if c.String("cert") != "" && c.String("key") != "" {
+		keyPair, err := tls.LoadX509KeyPair(c.String("cert"), c.String("key"))
+		if err != nil {
+			log.Printf("Failed to load certificate/keypair: %s", err)
+		}
+		tlsConfig := &tls.Config{
+			Certificates:       []tls.Certificate{keyPair},
+			InsecureSkipVerify: true,
+			ClientAuth:         tls.NoClientCert,
+		}
+		opts.SetTLSConfig(tlsConfig)
+		if !strings.HasPrefix(c.String("endpoint"), "ssl://") &&
+			!strings.HasPrefix(c.String("endpoint"), "tls://") {
+			log.Println("Warning: To use TLS the endpoint URL will have to begin with 'ssl://' or 'tls://'")
+		}
+	} else if (c.String("cert") != "" && c.String("key") == "") ||
+		(c.String("cert") == "" && c.String("key") != "") {
+		log.Println("Warning: For TLS to work both certificate and private key are needed. Skipping TLS.")
+	}
+
 	opts.OnConnect = func(client mqtt.Client) {
 		log.Printf("Connected to %s", c.String("endpoint"))
 		// subscribe on every (re)connect
@@ -86,7 +146,7 @@ func runServer(c *cli.Context) {
 			processUpdate(msg.Topic(), string(msg.Payload()))
 		})
 		if !token.WaitTimeout(10 * time.Second) {
-			log.Println("Erorr: Timeout subscribing to topic $SYS/#")
+			log.Println("Error: Timeout subscribing to topic $SYS/#")
 		}
 		if err := token.Error(); err != nil {
 			log.Printf("Failed to subscribe to topic $SYS/#: %s", err)
