@@ -237,6 +237,7 @@ func parseTopic(topic string) string {
 	name := strings.Replace(topic, "$SYS/", "", 1)
 	name = strings.Replace(name, "/", "_", -1)
 	name = strings.Replace(name, " ", "_", -1)
+	name = strings.Replace(name, "-", "_", -1)
 	return name
 }
 
