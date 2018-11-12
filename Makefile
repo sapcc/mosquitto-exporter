@@ -2,7 +2,7 @@ PKG_NAME:=github.com/sapcc/mosquitto-exporter
 BUILD_DIR:=bin
 MOSQUITTO_EXPORTER_BINARY:=$(BUILD_DIR)/mosquitto_exporter
 IMAGE := sapcc/mosquitto-exporter
-VERSION=0.4.0
+VERSION=0.5.0
 LDFLAGS=-s -w -X main.Version=$(VERSION) -X main.GITCOMMIT=`git rev-parse --short HEAD`
 CGO_ENABLED=0
 GOARCH=amd64
