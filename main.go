@@ -110,7 +110,14 @@ func runServer(c *cli.Context) {
 	opts := mqtt.NewClientOptions()
 	opts.SetCleanSession(true)
 	opts.AddBroker(c.String("endpoint"))
-
+	// initializes the "broker up" metric to 0 (down)
+	gaugeMetrics["up"] = prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "up",
+			Help: "broker up/down",
+		})
+	prometheus.MustRegister(gaugeMetrics["up"])
+	gaugeMetrics["up"].Set(0)
+	log.Printf("Setting the up metric to 0")
 	// if you have a username you'll need a password with it
 	if c.String("user") != "" {
 		opts.SetUsername(c.String("user"))
@@ -141,6 +148,8 @@ func runServer(c *cli.Context) {
 
 	opts.OnConnect = func(client mqtt.Client) {
 		log.Printf("Connected to %s", c.String("endpoint"))
+		// update the "broker up" metric (up)
+		gaugeMetrics["up"].Set(1)
 		// subscribe on every (re)connect
 		token := client.Subscribe("$SYS/#", 0, func(_ mqtt.Client, msg mqtt.Message) {
 			processUpdate(msg.Topic(), string(msg.Payload()))
@@ -154,6 +163,8 @@ func runServer(c *cli.Context) {
 	}
 	opts.OnConnectionLost = func(client mqtt.Client, err error) {
 		log.Printf("Error: Connection to %s lost: %s", c.String("endpoint"), err)
+		// update the "broker up" metric (down)
+		gaugeMetrics["up"].Set(0)
 	}
 	client := mqtt.NewClient(opts)
 
@@ -170,7 +181,7 @@ func runServer(c *cli.Context) {
 		}
 		time.Sleep(5 * time.Second)
 	}
-
+	
 	// init the router and server
 	http.Handle("/metrics", prometheus.Handler())
 	http.HandleFunc("/", serveVersion)
