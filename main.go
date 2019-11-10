@@ -166,11 +166,11 @@ func runServer(c *cli.Context) {
 		// update the "broker up" metric (down)
 		gaugeMetrics["broker_connection_up"].Set(0)
 		// try to reconnect
-		mqttConnect()
+		mqttConnect(client)
 	}
 	client := mqtt.NewClient(opts)
 
-	mqttConnect()
+	mqttConnect(client)
 	
 	// init the router and server
 	http.Handle("/metrics", prometheus.Handler())
@@ -181,7 +181,7 @@ func runServer(c *cli.Context) {
 }
 
 // try to connect forever with the MQTT broker
-func mqttConnect(){
+func mqttConnect(client mqtt.Client){
 	// try to connect forever
 	for {
 		token := client.Connect()
