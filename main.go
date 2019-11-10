@@ -110,6 +110,7 @@ func runServer(c *cli.Context) {
 	opts := mqtt.NewClientOptions()
 	opts.SetCleanSession(true)
 	opts.AddBroker(c.String("endpoint"))
+	
 	// initializes the "broker up" metric to 0 (down)
 	gaugeMetrics["broker_connection_up"] = prometheus.NewGauge(prometheus.GaugeOpts{
 			Name: "broker_connection_up",
@@ -117,7 +118,7 @@ func runServer(c *cli.Context) {
 		})
 	prometheus.MustRegister(gaugeMetrics["broker_connection_up"])
 	gaugeMetrics["broker_connection_up"].Set(0)
-	log.Printf("Setting the up metric to 0")
+	
 	// if you have a username you'll need a password with it
 	if c.String("user") != "" {
 		opts.SetUsername(c.String("user"))
@@ -166,11 +167,11 @@ func runServer(c *cli.Context) {
 		// update the "broker up" metric (down)
 		gaugeMetrics["broker_connection_up"].Set(0)
 		// try to reconnect
-		mqttConnect(client)
+		mqttConnect(client, c)
 	}
 	client := mqtt.NewClient(opts)
 
-	mqttConnect(client)
+	go mqttConnect(client, c)
 	
 	// init the router and server
 	http.Handle("/metrics", prometheus.Handler())
@@ -181,7 +182,7 @@ func runServer(c *cli.Context) {
 }
 
 // try to connect forever with the MQTT broker
-func mqttConnect(client mqtt.Client){
+func mqttConnect(client mqtt.Client, c *cli.Context){
 	// try to connect forever
 	for {
 		token := client.Connect()
@@ -191,13 +192,13 @@ func mqttConnect(client mqtt.Client){
 			}
 			log.Printf("Error: Failed to connect to broker: %s", token.Error())
 		} else {
-			log.Printf("Timeout connecting to endpoint %s", c.String("endpoint"))
+			log.Printf("Timeout connecting to endpoint %s", c.GlobalString("endpoint"))
 		}
 		time.Sleep(5 * time.Second)
 	}
 }
 
-// $SYS/broker/bytes/received
+// process the messages received in $SYS/
 func processUpdate(topic, payload string) {
 	//log.Printf("Got broker update with topic %s and data %s", topic, payload)
 	if _, ok := ignoreKeyMetrics[topic]; !ok {
@@ -209,6 +210,14 @@ func processUpdate(topic, payload string) {
 			processGaugeMetric(topic, payload)
 		}
 	}
+}
+
+func restartSecondsSinceLastUpdate(){
+	
+}
+
+func increaseSecondsSinceLastUpdate(){
+	
 }
 
 func processCounterMetric(topic, payload string) {
