@@ -1,5 +1,4 @@
-#PKG_NAME:=github.com/sapcc/mosquitto-exporter
-PKG_NAME:=github.com/daviddetorres/mosquitto-exporter
+PKG_NAME:=github.com/sapcc/mosquitto-exporter
 BUILD_DIR:=bin
 MOSQUITTO_EXPORTER_BINARY:=$(BUILD_DIR)/mosquitto_exporter
 IMAGE := sapcc/mosquitto-exporter
@@ -22,6 +21,7 @@ build:
 	go get github.com/codegangsta/cli
 	go get github.com/eclipse/paho.mqtt.golang
 	go get github.com/prometheus/client_golang/prometheus
+	go get github.com/sapcc/mosquitto-exporter
 	# Build sources
 	go build -o $(MOSQUITTO_EXPORTER_BINARY) -ldflags="$(LDFLAGS)" $(PKG_NAME)
 
