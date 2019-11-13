@@ -17,11 +17,6 @@ help:
 .PHONY: build
 build:
 	@mkdir -p $(BUILD_DIR)
-	# Install dependencies
-	go get github.com/codegangsta/cli
-	go get github.com/eclipse/paho.mqtt.golang
-	go get github.com/prometheus/client_golang/prometheus
-	go get github.com/sapcc/mosquitto-exporter
 	# Build sources
 	go build -o $(MOSQUITTO_EXPORTER_BINARY) -ldflags="$(LDFLAGS)" $(PKG_NAME)
 
