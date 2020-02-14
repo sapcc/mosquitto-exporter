@@ -99,6 +99,12 @@ func main() {
 			Value:  "",
 			EnvVar: "MQTT_KEY",
 		},
+		cli.StringFlag{
+			Name:   "client-id,i",
+			Usage:  "Location of a TLS certificate .pem file for the Mosquitto message broker",
+			Value:  "",
+			EnvVar: "MQTT_CLIENT_ID",
+		},
 	}
 
 	app.Run(os.Args)
@@ -110,6 +116,10 @@ func runServer(c *cli.Context) {
 	opts := mqtt.NewClientOptions()
 	opts.SetCleanSession(true)
 	opts.AddBroker(c.String("endpoint"))
+
+	if c.String("client-id") != "" {
+		opts.SetClientID(c.String("client-id"))
+	}
 
 	// if you have a username you'll need a password with it
 	if c.String("user") != "" {
