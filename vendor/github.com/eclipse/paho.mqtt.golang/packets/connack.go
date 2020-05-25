@@ -15,9 +15,7 @@ type ConnackPacket struct {
 }
 
 func (ca *ConnackPacket) String() string {
-	str := fmt.Sprintf("%s\n", ca.FixedHeader)
-	str += fmt.Sprintf("sessionpresent: %t returncode: %d", ca.SessionPresent, ca.ReturnCode)
-	return str
+	return fmt.Sprintf("%s sessionpresent: %t returncode: %d", ca.FixedHeader, ca.SessionPresent, ca.ReturnCode)
 }
 
 func (ca *ConnackPacket) Write(w io.Writer) error {
@@ -37,10 +35,14 @@ func (ca *ConnackPacket) Write(w io.Writer) error {
 //Unpack decodes the details of a ControlPacket after the fixed
 //header has been read
 func (ca *ConnackPacket) Unpack(b io.Reader) error {
-	ca.SessionPresent = 1&decodeByte(b) > 0
-	ca.ReturnCode = decodeByte(b)
+	flags, err := decodeByte(b)
+	if err != nil {
+		return err
+	}
+	ca.SessionPresent = 1&flags > 0
+	ca.ReturnCode, err = decodeByte(b)
 
-	return nil
+	return err
 }
 
 //Details returns a Details struct containing the Qos and

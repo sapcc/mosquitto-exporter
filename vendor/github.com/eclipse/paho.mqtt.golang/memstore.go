@@ -88,7 +88,7 @@ func (store *MemoryStore) All() []string {
 		ERROR.Println(STR, "Trying to use memory store, but not open")
 		return nil
 	}
-	keys := []string{}
+	var keys []string
 	for k := range store.messages {
 		keys = append(keys, k)
 	}
@@ -109,7 +109,7 @@ func (store *MemoryStore) Del(key string) {
 	if m == nil {
 		WARN.Println(STR, "memorystore del: message", mid, "not found")
 	} else {
-		store.messages[key] = nil
+		delete(store.messages, key)
 		DEBUG.Println(STR, "memorystore del: message", mid, "was deleted")
 	}
 }

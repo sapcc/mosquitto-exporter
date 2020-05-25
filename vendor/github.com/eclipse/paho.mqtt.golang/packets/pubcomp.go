@@ -13,9 +13,7 @@ type PubcompPacket struct {
 }
 
 func (pc *PubcompPacket) String() string {
-	str := fmt.Sprintf("%s\n", pc.FixedHeader)
-	str += fmt.Sprintf("MessageID: %d", pc.MessageID)
-	return str
+	return fmt.Sprintf("%s MessageID: %d", pc.FixedHeader, pc.MessageID)
 }
 
 func (pc *PubcompPacket) Write(w io.Writer) error {
@@ -31,9 +29,10 @@ func (pc *PubcompPacket) Write(w io.Writer) error {
 //Unpack decodes the details of a ControlPacket after the fixed
 //header has been read
 func (pc *PubcompPacket) Unpack(b io.Reader) error {
-	pc.MessageID = decodeUint16(b)
+	var err error
+	pc.MessageID, err = decodeUint16(b)
 
-	return nil
+	return err
 }
 
 //Details returns a Details struct containing the Qos and

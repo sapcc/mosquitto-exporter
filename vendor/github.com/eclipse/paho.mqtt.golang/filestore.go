@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 	"sync"
 
 	"github.com/eclipse/paho.mqtt.golang/packets"
@@ -100,7 +101,7 @@ func (store *FileStore) Get(key string) packets.ControlPacket {
 	store.RLock()
 	defer store.RUnlock()
 	if !store.opened {
-		ERROR.Println(STR, "Trying to use file store, but not open")
+		ERROR.Println(STR, "trying to use file store, but not open")
 		return nil
 	}
 	filepath := fullpath(store.directory, key)
@@ -116,14 +117,16 @@ func (store *FileStore) Get(key string) packets.ControlPacket {
 	if rerr != nil {
 		newpath := corruptpath(store.directory, key)
 		WARN.Println(STR, "corrupted file detected:", rerr.Error(), "archived at:", newpath)
-		os.Rename(filepath, newpath)
+		if err := os.Rename(filepath, newpath); err != nil {
+			ERROR.Println(STR, err)
+		}
 		return nil
 	}
 	return msg
 }
 
 // All will provide a list of all of the keys associated with messages
-// currenly residing in the FileStore.
+// currently residing in the FileStore.
 func (store *FileStore) All() []string {
 	store.RLock()
 	defer store.RUnlock()
@@ -150,17 +153,22 @@ func (store *FileStore) Reset() {
 
 // lockless
 func (store *FileStore) all() []string {
+	var err error
+	var keys []string
+	var files fileInfos
+
 	if !store.opened {
-		ERROR.Println(STR, "Trying to use file store, but not open")
+		ERROR.Println(STR, "trying to use file store, but not open")
 		return nil
 	}
-	keys := []string{}
-	files, rderr := ioutil.ReadDir(store.directory)
-	chkerr(rderr)
+
+	files, err = ioutil.ReadDir(store.directory)
+	chkerr(err)
+	sort.Sort(files)
 	for _, f := range files {
 		DEBUG.Println(STR, "file in All():", f.Name())
 		name := f.Name()
-		if name[len(name)-4:len(name)] != msgExt {
+		if name[len(name)-4:] != msgExt {
 			DEBUG.Println(STR, "skipping file, doesn't have right extension: ", name)
 			continue
 		}
@@ -173,7 +181,7 @@ func (store *FileStore) all() []string {
 // lockless
 func (store *FileStore) del(key string) {
 	if !store.opened {
-		ERROR.Println(STR, "Trying to use file store, but not open")
+		ERROR.Println(STR, "trying to use file store, but not open")
 		return
 	}
 	DEBUG.Println(STR, "store del filepath:", store.directory)
@@ -232,4 +240,18 @@ func exists(file string) bool {
 		chkerr(err)
 	}
 	return true
+}
+
+type fileInfos []os.FileInfo
+
+func (f fileInfos) Len() int {
+	return len(f)
+}
+
+func (f fileInfos) Swap(i, j int) {
+	f[i], f[j] = f[j], f[i]
+}
+
+func (f fileInfos) Less(i, j int) bool {
+	return f[i].ModTime().Before(f[j].ModTime())
 }

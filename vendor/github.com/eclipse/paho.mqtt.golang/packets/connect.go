@@ -29,9 +29,7 @@ type ConnectPacket struct {
 }
 
 func (c *ConnectPacket) String() string {
-	str := fmt.Sprintf("%s\n", c.FixedHeader)
-	str += fmt.Sprintf("protocolversion: %d protocolname: %s cleansession: %t willflag: %t WillQos: %d WillRetain: %t Usernameflag: %t Passwordflag: %t keepalive: %d\nclientId: %s\nwilltopic: %s\nwillmessage: %s\nUsername: %s\nPassword: %s\n", c.ProtocolVersion, c.ProtocolName, c.CleanSession, c.WillFlag, c.WillQos, c.WillRetain, c.UsernameFlag, c.PasswordFlag, c.Keepalive, c.ClientIdentifier, c.WillTopic, c.WillMessage, c.Username, c.Password)
-	return str
+	return fmt.Sprintf("%s protocolversion: %d protocolname: %s cleansession: %t willflag: %t WillQos: %d WillRetain: %t Usernameflag: %t Passwordflag: %t keepalive: %d clientId: %s willtopic: %s willmessage: %s Username: %s Password: %s", c.FixedHeader, c.ProtocolVersion, c.ProtocolName, c.CleanSession, c.WillFlag, c.WillQos, c.WillRetain, c.UsernameFlag, c.PasswordFlag, c.Keepalive, c.ClientIdentifier, c.WillTopic, c.WillMessage, c.Username, c.Password)
 }
 
 func (c *ConnectPacket) Write(w io.Writer) error {
@@ -64,9 +62,19 @@ func (c *ConnectPacket) Write(w io.Writer) error {
 //Unpack decodes the details of a ControlPacket after the fixed
 //header has been read
 func (c *ConnectPacket) Unpack(b io.Reader) error {
-	c.ProtocolName = decodeString(b)
-	c.ProtocolVersion = decodeByte(b)
-	options := decodeByte(b)
+	var err error
+	c.ProtocolName, err = decodeString(b)
+	if err != nil {
+		return err
+	}
+	c.ProtocolVersion, err = decodeByte(b)
+	if err != nil {
+		return err
+	}
+	options, err := decodeByte(b)
+	if err != nil {
+		return err
+	}
 	c.ReservedBit = 1 & options
 	c.CleanSession = 1&(options>>1) > 0
 	c.WillFlag = 1&(options>>2) > 0
@@ -74,17 +82,35 @@ func (c *ConnectPacket) Unpack(b io.Reader) error {
 	c.WillRetain = 1&(options>>5) > 0
 	c.PasswordFlag = 1&(options>>6) > 0
 	c.UsernameFlag = 1&(options>>7) > 0
-	c.Keepalive = decodeUint16(b)
-	c.ClientIdentifier = decodeString(b)
+	c.Keepalive, err = decodeUint16(b)
+	if err != nil {
+		return err
+	}
+	c.ClientIdentifier, err = decodeString(b)
+	if err != nil {
+		return err
+	}
 	if c.WillFlag {
-		c.WillTopic = decodeString(b)
-		c.WillMessage = decodeBytes(b)
+		c.WillTopic, err = decodeString(b)
+		if err != nil {
+			return err
+		}
+		c.WillMessage, err = decodeBytes(b)
+		if err != nil {
+			return err
+		}
 	}
 	if c.UsernameFlag {
-		c.Username = decodeString(b)
+		c.Username, err = decodeString(b)
+		if err != nil {
+			return err
+		}
 	}
 	if c.PasswordFlag {
-		c.Password = decodeBytes(b)
+		c.Password, err = decodeBytes(b)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -110,6 +136,10 @@ func (c *ConnectPacket) Validate() byte {
 	if len(c.ClientIdentifier) > 65535 || len(c.Username) > 65535 || len(c.Password) > 65535 {
 		//Bad size field
 		return ErrProtocolViolation
+	}
+	if len(c.ClientIdentifier) == 0 && !c.CleanSession {
+		//Bad client identifier
+		return ErrRefusedIDRejected
 	}
 	return Accepted
 }

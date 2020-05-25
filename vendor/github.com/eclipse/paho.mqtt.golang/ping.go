@@ -16,70 +16,59 @@ package mqtt
 
 import (
 	"errors"
+	"io"
+	"sync/atomic"
 	"time"
 
 	"github.com/eclipse/paho.mqtt.golang/packets"
 )
 
-func keepalive(c *client) {
+// keepalive - Send ping when connection unused for set period
+// connection passed in to avoid race condition on shutdown
+func keepalive(c *client, conn io.Writer) {
+	defer c.workers.Done()
 	DEBUG.Println(PNG, "keepalive starting")
+	var checkInterval int64
+	var pingSent time.Time
 
-	pingTimer := timer{Timer: time.NewTimer(c.options.KeepAlive)}
-	pingRespTimer := timer{Timer: time.NewTimer(c.options.PingTimeout)}
+	if c.options.KeepAlive > 10 {
+		checkInterval = 5
+	} else {
+		checkInterval = c.options.KeepAlive / 2
+	}
 
-	pingRespTimer.Stop()
+	intervalTicker := time.NewTicker(time.Duration(checkInterval * int64(time.Second)))
+	defer intervalTicker.Stop()
 
 	for {
 		select {
 		case <-c.stop:
 			DEBUG.Println(PNG, "keepalive stopped")
-			c.workers.Done()
 			return
-		case <-pingTimer.C:
-			pingTimer.SetRead(true)
-			DEBUG.Println(PNG, "keepalive sending ping")
-			ping := packets.NewControlPacket(packets.Pingreq).(*packets.PingreqPacket)
-			//We don't want to wait behind large messages being sent, the Write call
-			//will block until it it able to send the packet.
-			ping.Write(c.conn)
+		case <-intervalTicker.C:
+			lastSent := c.lastSent.Load().(time.Time)
+			lastReceived := c.lastReceived.Load().(time.Time)
 
-			pingRespTimer.Reset(c.options.PingTimeout)
-		case <-c.pingResp:
-			DEBUG.Println(NET, "resetting ping timers")
-			pingRespTimer.Stop()
-			pingTimer.Reset(c.options.KeepAlive)
-		case <-pingRespTimer.C:
-			pingRespTimer.SetRead(true)
-			CRITICAL.Println(PNG, "pingresp not received, disconnecting")
-			c.workers.Done()
-			c.internalConnLost(errors.New("pingresp not received, disconnecting"))
-			pingTimer.Stop()
-			return
+			DEBUG.Println(PNG, "ping check", time.Since(lastSent).Seconds())
+			if time.Since(lastSent) >= time.Duration(c.options.KeepAlive*int64(time.Second)) || time.Since(lastReceived) >= time.Duration(c.options.KeepAlive*int64(time.Second)) {
+				if atomic.LoadInt32(&c.pingOutstanding) == 0 {
+					DEBUG.Println(PNG, "keepalive sending ping")
+					ping := packets.NewControlPacket(packets.Pingreq).(*packets.PingreqPacket)
+					//We don't want to wait behind large messages being sent, the Write call
+					//will block until it it able to send the packet.
+					atomic.StoreInt32(&c.pingOutstanding, 1)
+					if err := ping.Write(conn); err != nil {
+						ERROR.Println(PNG, err)
+					}
+					c.lastSent.Store(time.Now())
+					pingSent = time.Now()
+				}
+			}
+			if atomic.LoadInt32(&c.pingOutstanding) > 0 && time.Since(pingSent) >= c.options.PingTimeout {
+				CRITICAL.Println(PNG, "pingresp not received, disconnecting")
+				go c.internalConnLost(errors.New("pingresp not received, disconnecting")) // no harm in calling this if the connection is already down (better than stopping!)
+				return
+			}
 		}
 	}
-}
-
-type timer struct {
-	*time.Timer
-	readFrom bool
-}
-
-func (t *timer) SetRead(v bool) {
-	t.readFrom = v
-}
-
-func (t *timer) Stop() bool {
-	defer t.SetRead(true)
-
-	if !t.Timer.Stop() && !t.readFrom {
-		<-t.C
-		return false
-	}
-	return true
-}
-
-func (t *timer) Reset(d time.Duration) bool {
-	defer t.SetRead(false)
-	t.Stop()
-	return t.Timer.Reset(d)
 }

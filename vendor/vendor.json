@@ -15,22 +15,28 @@
 			"revisionTime": "2017-08-13T14:59:49Z"
 		},
 		{
-			"checksumSHA1": "br8f8s0vtwRq5P2DEtByXg5s4V0=",
+			"checksumSHA1": "m7JUau9x0EO9PmUcM8NyRTuwRx8=",
 			"path": "github.com/eclipse/paho.mqtt.golang",
-			"revision": "d4f545eb108a2d19f9b1a735689dbfb719bc21fb",
-			"revisionTime": "2016-12-24T12:24:24Z"
+			"revision": "4c98a2381d16c21ed2f9f131cec2429b0348ab0f",
+			"revisionTime": "2020-05-11T07:45:40Z"
 		},
 		{
-			"checksumSHA1": "wPreCwXsA/oU2R+lkOGpR6skdA0=",
+			"checksumSHA1": "fjmgsFEuou7kl9TTZDBRNG80dvY=",
 			"path": "github.com/eclipse/paho.mqtt.golang/packets",
-			"revision": "d4f545eb108a2d19f9b1a735689dbfb719bc21fb",
-			"revisionTime": "2016-12-24T12:24:24Z"
+			"revision": "4c98a2381d16c21ed2f9f131cec2429b0348ab0f",
+			"revisionTime": "2020-05-11T07:45:40Z"
 		},
 		{
 			"checksumSHA1": "kBeNcaKk56FguvPSUCEaH6AxpRc=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "8ee79997227bf9b34611aee7946ae64735e6fd93",
 			"revisionTime": "2016-11-17T03:31:26Z"
+		},
+		{
+			"checksumSHA1": "w80pSHuNAfMzGjyUMGdCmEINCFQ=",
+			"path": "github.com/gorilla/websocket",
+			"revision": "b65e62901fc1c0d968042419e74789f6af455eb9",
+			"revisionTime": "2020-03-19T17:50:51Z"
 		},
 		{
 			"checksumSHA1": "bKMZjd2wPw13VwoE7mBeSv5djFA=",
@@ -79,6 +85,18 @@
 			"path": "github.com/prometheus/procfs/xfs",
 			"revision": "a59ae619c824360be3641ceb5a456ff13dd58be6",
 			"revisionTime": "2017-02-14T15:35:19Z"
+		},
+		{
+			"checksumSHA1": "eIoaD6Kj5iiWn4oxbJDeev/2YSA=",
+			"path": "golang.org/x/net/internal/socks",
+			"revision": "0ba52f642ac2f9371a88bfdde41f4b4e195a37c0",
+			"revisionTime": "2020-03-11T20:59:02Z"
+		},
+		{
+			"checksumSHA1": "28Sn0XihdqNv3MysxyRalibC3Tg=",
+			"path": "golang.org/x/net/proxy",
+			"revision": "0ba52f642ac2f9371a88bfdde41f4b4e195a37c0",
+			"revisionTime": "2020-03-11T20:59:02Z"
 		},
 		{
 			"checksumSHA1": "7EZyXN0EmZLgGxZxK01IJua4c8o=",
