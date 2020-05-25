@@ -3,7 +3,7 @@ BUILD_DIR:=bin
 MOSQUITTO_EXPORTER_BINARY:=$(BUILD_DIR)/mosquitto_exporter
 IMAGE := sapcc/mosquitto-exporter
 VERSION=0.6.0
-LDFLAGS=-s -w -X main.Version=$(VERSION) -X main.GITCOMMIT=`git rev-parse --short HEAD`
+LDFLAGS=-s -w -X main.Version=$(VERSION) -X main.GITCOMMIT=`git rev-parse --short HEAD` -linkmode external -extldflags -static
 CGO_ENABLED=0
 GOARCH=amd64
 .PHONY: help
