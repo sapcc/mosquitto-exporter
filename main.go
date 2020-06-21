@@ -101,7 +101,7 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:   "client-id,i",
-			Usage:  "Location of a TLS certificate .pem file for the Mosquitto message broker",
+			Usage:  "Client id to be used to connect to the Mosquitto message broker",
 			Value:  "",
 			EnvVar: "MQTT_CLIENT_ID",
 		},
