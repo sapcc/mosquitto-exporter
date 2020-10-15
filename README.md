@@ -5,8 +5,8 @@ Prometheus exporter for the [Mosquitto MQTT message broker](https://mosquitto.or
 There is a docker image available:
 ```
 docker run \
-  -e BROKER_ENDPOINT=tcp://mosquitto:1883 \
-  -p 9234:9234 sapcc/mosquitto-exporter
+  -p 9234:9234 sapcc/mosquitto-exporter \
+  --endpoint tcp://mosquitto:1883
 ```
 
 Usage:
@@ -17,21 +17,25 @@ NAME:
    Mosquitto exporter - Prometheus exporter for broker metrics
 
 USAGE:
-   bin/mosquitto_exporter [global options] command [command options] [arguments...]
+   mosquitto_exporter [global options] command [command options] [arguments...]
 
 VERSION:
-   0.1 (78978f1), go1.7.4
+   0.6.0 (0ac92b5), go1.14.2
 
-AUTHOR(S):
-   Arturo Reuschenbach Puncernau <a.reuschenbach.puncernau@sap.com> Fabian Ruff <fabian.ruff@sap.com>
+AUTHORS:
+   Arturo Reuschenbach Puncernau <a.reuschenbach.puncernau@sap.com>
+   Fabian Ruff <fabian.ruff@sap.com>
 
 COMMANDS:
-   help, h	Shows a list of commands or help for one command
+     help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   --endpoint, -e "tcp://127.0.0.1:1883"	Endpoint for the Mosquitto message broker [$BROKER_ENDPOINT]
-   --bind-address, -b "0.0.0.0:9234"		Listen address for metrics HTTP endpoint [$BIND_ADDRESS]
-   --help, -h					show help
-   --version, -v				print the version
-
+   --endpoint value, -e value      Endpoint for the Mosquitto message broker (default: "tcp://127.0.0.1:1883") [$BROKER_ENDPOINT]
+   --bind-address value, -b value  Listen address for metrics HTTP endpoint (default: "0.0.0.0:9234") [$BIND_ADDRESS]
+   --user value, -u value          Username for the Mosquitto message broker [$MQTT_USER]
+   --pass value, -p value          Password for the User on the Mosquitto message broker [$MQTT_PASS]
+   --cert value, -c value          Location of a TLS certificate .pem file for the Mosquitto message broker [$MQTT_CERT]
+   --key value, -k value           Location of a TLS private key .pem file for the Mosquitto message broker [$MQTT_KEY]
+   --help, -h                      show help
+   --version, -v                   print the version
 ```
