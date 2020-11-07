@@ -27,10 +27,6 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
 
-      - name: test provider
-        run: |
-          make generate
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:

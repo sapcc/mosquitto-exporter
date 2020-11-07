@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"runtime"
 )
 
 var (
-	Version   = "develop"
-	GITCOMMIT = "HEAD"
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+	builtBy = "unknown"
 )
 
 func versionString() string {
-	return fmt.Sprintf("%s (%s), %s", Version, GITCOMMIT, runtime.Version())
+	return fmt.Sprintf("mosquitto exporter %s, commit %s, built at %s by %s", version, commit, date, builtBy)
 }
