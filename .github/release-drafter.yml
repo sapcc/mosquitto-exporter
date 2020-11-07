@@ -1,0 +1,22 @@
+name-template: v$NEXT_PATCH_VERSION
+tag-template: v$NEXT_PATCH_VERSION
+branches:
+  - master
+  - develop
+categories:
+  - title: 🚀 Features
+    label: enhancement
+  - title: 🐛 Bug Fixes
+    label: bug
+  - title: 🧰 Maintenance
+    labels:
+      - 'chore'
+      - 'documentations'
+      - 'project-config'
+      - 'cicd'
+      - 'dependencies'
+
+template: |
+  ## Changes
+
+  $CHANGES
