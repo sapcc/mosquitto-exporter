@@ -1,0 +1,72 @@
+{
+    "name": "mosquitto-exporter",
+    "dockerComposeFile": [
+        "docker-compose.yml"
+    ],
+    "service": "vscode",
+    "runServices": [
+        "vscode"
+    ],
+    "mounts": [
+        "source=mosquitto-exporter-vol,target=/home/vscode/.vscode-server/extensions,type=volume",
+        // And/or for VS Code Insiders
+        "source=mosquitto-exporter-vol-insiders,target=/home/vscode/.vscode-server-insiders/extensions,type=volume",
+    ],
+    "shutdownAction": "stopCompose",
+    "postCreateCommand": "chmod -R 700 .git",
+    "workspaceFolder": "/go/src/github.com/sapcc/mosquitto-exporter",
+    // "overrideCommand": "",
+    "extensions": [
+        // General backend
+        "mohsen1.prettify-json",
+        "redhat.vscode-yaml", // Kubernetes and Kedge syntax support
+        // Go
+        "ms-vscode.go",
+        "hbenl.vscode-test-explorer",
+        "ethan-reesor.vscode-go-test-adapter",
+        // Console
+        "IBM.output-colorizer",
+        // Git
+        "eamodio.gitlens",
+        "mhutchie.git-graph",
+        // Other linters
+        "davidanson.vscode-markdownlint",
+        "ms-azuretools.vscode-docker",
+        // Other helpers
+        "shardulm94.trailing-spaces",
+        "Gruntfuggly.todo-tree",
+        "bierner.emojisense",
+        "stkb.rewrap", // rewrap comments after n characters on one line
+        // Other
+        "jrebocho.vscode-random", // generate random values
+        "alefragnani.Bookmarks",
+        "quicktype.quicktype", // Paste JSON as code
+        "spikespaz.vscode-smoothtype", // smooth cursor animation
+        "vscode-icons-team.vscode-icons",
+        // markdown
+        "jebbs.markdown-extended",
+        "bierner.github-markdown-preview",
+        "HashiCorp.terraform",
+        "ms-kubernetes-tools.kind-vscode",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "jetmartin.bats",
+        "EditorConfig.EditorConfig",
+        "lonefy.vscode-js-css-html-formatter",
+        "richie5um2.vscode-statusbar-json-path",
+    ],
+    "settings": {
+        // General settings
+        "files.eol": "\n",
+        "files.encoding": "utf8",
+        "editor.renderWhitespace": "all",
+        // Docker
+        "remote.extensionKind": {
+            "ms-azuretools.vscode-docker": "workspace"
+        },
+        "[makefile]": {
+            "editor.insertSpaces": false,
+            "editor.detectIndentation": false
+        },
+        "go.useLanguageServer": true,
+    }
+}
