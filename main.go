@@ -105,6 +105,12 @@ func main() {
 			Value:  "",
 			EnvVar: "MQTT_KEY",
 		},
+		cli.StringFlag{
+			Name:   "client-id,i",
+			Usage:  "Client id to be used to connect to the Mosquitto message broker",
+			Value:  "",
+			EnvVar: "MQTT_CLIENT_ID",
+		},
 	}
 
 	app.Run(os.Args)
@@ -133,6 +139,10 @@ func runServer(c *cli.Context) {
 	})
 	prometheus.MustRegister(gaugeMetrics["broker_seconds_from_last_update"])
 	gaugeMetrics["broker_seconds_from_last_update"].Set(-1)
+
+	if c.String("client-id") != "" {
+		opts.SetClientID(c.String("client-id"))
+	}
 
 	// if you have a username you'll need a password with it
 	if c.String("user") != "" {
