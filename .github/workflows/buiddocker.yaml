@@ -14,20 +14,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
       - name: Set up Docker Buildx
         id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v3
+        uses: docker/setup-buildx-action@v1
         with:
           buildx-version: latest
-          qemu-version: latest
 
-      - name: Login to Docker Registry
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-        run: |
-          echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        with:
+           image: tonistiigi/binfmt:latest
+           platforms: all
+
+      - name: Login to GitHub Packages Docker Registry
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: Determine tag
         run: |
