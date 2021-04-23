@@ -24,6 +24,8 @@ linux: build
 
 docker: linux
 	docker build -t $(IMAGE):$(VERSION) .
+	docker build -t $(IMAGE):latest .
 
 push:
 	docker push $(IMAGE):$(VERSION)
+	docker push $(IMAGE):latest
