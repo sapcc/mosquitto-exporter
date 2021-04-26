@@ -48,6 +48,10 @@ var (
 func main() {
 	app := cli.NewApp()
 
+	// mqtt.DEBUG = log.New(os.Stdout, "", 0)
+	mqtt.ERROR = log.New(os.Stdout, "", 0)
+	mqtt.WARN = log.New(os.Stdout, "", 0)
+
 	app.Name = appName
 	app.Version = versionString()
 	app.Authors = []cli.Author{
