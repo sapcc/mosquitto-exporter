@@ -1,7 +1,15 @@
+FROM golang:1.14.2-buster AS build
+
+WORKDIR /go/src/app
+
+COPY . .
+
+RUN make build
+
 FROM scratch
 LABEL source_repository="https://github.com/sapcc/mosquitto-exporter"
 
-COPY bin/mosquitto_exporter /mosquitto_exporter
+COPY --from=build /go/src/app/bin/mosquitto_exporter /mosquitto_exporter
 
 EXPOSE 9234
 
