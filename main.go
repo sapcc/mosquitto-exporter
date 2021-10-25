@@ -14,6 +14,7 @@ import (
 	"github.com/codegangsta/cli"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -186,7 +187,7 @@ func runServer(c *cli.Context) {
 	}
 
 	// init the router and server
-	http.Handle("/metrics", prometheus.Handler())
+	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/", serveVersion)
 	log.Printf("Listening on %s...", c.GlobalString("bind-address"))
 	err := http.ListenAndServe(c.GlobalString("bind-address"), nil)
