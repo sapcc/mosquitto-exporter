@@ -168,7 +168,8 @@ func runServer(c *cli.Context) {
 		}
 	}
 	opts.OnConnectionLost = func(client mqtt.Client, err error) {
-		log.Printf("Error: Connection to %s lost: %s", c.String("endpoint"), err)
+		log.Printf("Error: Connection to %s lost: %s, resetting counters", c.String("endpoint"), err)
+		resetMetrics()
 	}
 	client := mqtt.NewClient(opts)
 
@@ -192,6 +193,19 @@ func runServer(c *cli.Context) {
 	log.Printf("Listening on %s...", c.GlobalString("bind-address"))
 	err := http.ListenAndServe(c.GlobalString("bind-address"), nil)
 	fatalfOnError(err, "Failed to bind on %s: ", c.GlobalString("bind-address"))
+}
+
+func resetMetrics() {
+	for topic, _ := range counterMetrics {
+		if counterMetrics[topic] != nil {
+			counterMetrics[topic].Set(0)
+		}
+	}
+	for topic, _ := range gaugeMetrics {
+		if gaugeMetrics[topic] != nil {
+			gaugeMetrics[topic].Set(0)
+		}
+	}
 }
 
 // $SYS/broker/bytes/received
